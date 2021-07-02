@@ -1,0 +1,16 @@
+{
+  "name": "zeyd_fun_bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "node-fetch": "^2.6.1",
+    "node-telegram-bot-api": "^0.53.0"
+  }
+}
