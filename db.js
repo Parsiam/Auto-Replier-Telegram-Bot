@@ -1,8 +1,9 @@
-const mongoose = require('mongoose');
-const { TOKEN, OPTIONS } = require('./config');
-const TelegramBot = require('node-telegram-bot-api');
+const mongoose = require("mongoose");
+const { TOKEN, OPTIONS } = require("./config");
+const TelegramBot = require("node-telegram-bot-api");
 
-const { MONGO } = require('./config');
+const { MONGO } = require("./config");
+const { QASchema, StopListSchema } = require("./Models");
 
 const connectDB = async () => {
   try {
@@ -22,29 +23,15 @@ const connectDB = async () => {
 };
 
 //#region Model
-const QASchema = mongoose.Schema({
-  q: {
-    type: String,
-  },
-  a: {
-    type: String,
-  },
-});
+const stopList = mongoose.model("stoplist", StopListSchema);
 
 const createModel = (id) => {
   return mongoose.model(`${id}`, QASchema);
 };
 //#endregion
 
-const getCollections = async () => {
-  const names = (await mongoose.connection.db.listCollections().toArray()).map(
-    (collection) => collection.name
-  );
-  return names;
-};
-
 module.exports = {
   connectDB,
-  getCollections,
   createModel,
+  stopList,
 };
