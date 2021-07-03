@@ -1,17 +1,9 @@
-const dotenv = require('dotenv');
-const TelegramBot = require('node-telegram-bot-api');
 const Conterollers = require('./controllers');
+const { connectDB } = require('./db');
 
-dotenv.config();
-
-const TOKEN = process.env.TOKEN;
-
-const options = {
-  polling: true,
-};
-
-const bot = new TelegramBot(TOKEN, options);
-
-bot.on('text', (msg) => Conterollers.MessageController(msg, bot));
-
-// bot.getMe().then((info) => console.log(info));
+async function main() {
+  const bot = await connectDB();
+  // await bot.getMe().then((info) => console.log(info));
+  await bot.on('text', async (msg) => Conterollers.MessageController(msg, bot));
+}
+main();
