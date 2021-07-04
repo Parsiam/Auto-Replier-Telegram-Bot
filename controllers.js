@@ -6,7 +6,7 @@ module.exports = class Controllers {
     const Model = createModel(chat_id);
 
     if (message.text.startsWith("/")) {
-      this.CommandController(message, bot, chat_id);
+      this.CommandController(message, bot, chat_id, Model);
     } else {
       this.TextController(message, bot, Model);
     }
@@ -41,25 +41,51 @@ module.exports = class Controllers {
     }
   }
 
-  static async CommandController(message, bot, chat_id) {
+  static async CommandController(message, bot, chat_id, Model) {
     const command = message.text.split("@")[0];
     switch (command) {
       case "/stopbot":
-        const isStopped = await stopList.findOne({ chat_id });
-        if (isStopped) {
-          bot.sendMessage(chat_id, "Bot allaqachon to'xtatilgan!");
-        } else {
-          await stopList.create({ chat_id });
-          bot.sendMessage(chat_id, "Bot bu guruh uchun vaqtincha to'xtatildi!");
+        try {
+          const isStopped = await stopList.findOne({ chat_id });
+          if (isStopped) {
+            bot.sendMessage(chat_id, "Bot allaqachon to'xtatilgan!");
+          } else {
+            await stopList.create({ chat_id });
+            bot.sendMessage(
+              chat_id,
+              "Bot bu guruh uchun vaqtincha to'xtatildi!"
+            );
+          }
+        } catch (error) {
+          bot.sendMessage(process.env.MYID, error);
         }
         return;
       case "/activatebot":
-        const notStopped = await stopList.findOne({ chat_id });
-        if (notStopped) {
-          await stopList.deleteOne({ chat_id });
-          bot.sendMessage(chat_id, "Bot yana aktiv!");
+        try {
+          const notStopped = await stopList.findOne({ chat_id });
+          if (notStopped) {
+            await stopList.deleteOne({ chat_id });
+            bot.sendMessage(chat_id, "Bot yana aktiv!");
+          } else {
+            bot.sendMessage(chat_id, "Bot aktiv holatda!");
+          }
+        } catch (error) {
+          bot.sendMessage(process.env.MYID, error);
+        }
+        return;
+      case "/deleteanswer":
+        if (message.reply_to_message) {
+          try {
+            await Model.deleteOne({ a: message.reply_to_message.text });
+            bot.sendMessage(chat_id, "Javob muvaffaqiyatli o'chirildi!");
+          } catch (error) {
+            bot.sendMessage(process.env.MYID, error);
+          }
         } else {
-          bot.sendMessage(chat_id, "Bot aktiv holatda!");
+          bot.sendMessage(
+            chat_id,
+            "Javobni o'chirish uchun unga \n /deleteanswer buyrug'ini reply qiling!"
+          );
         }
         return;
       default:
