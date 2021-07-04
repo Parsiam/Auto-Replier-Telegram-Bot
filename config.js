@@ -1,4 +1,4 @@
-require('dotenv').config();
+require("dotenv").config();
 
 const { env } = process;
 
@@ -7,5 +7,6 @@ module.exports = {
   OPTIONS: {
     polling: true,
   },
-  MONGO: env.MONGO
+  MONGO: env.MONGO,
+  ADMINID: env.ADMINID,
 };
