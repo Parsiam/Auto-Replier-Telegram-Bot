@@ -5,11 +5,17 @@ module.exports = class Controllers {
   static async MessageController(message, bot) {
     const chat_id = message.chat.id;
     const Model = createModel(chat_id);
+    const { id: botId } = await bot.getMe();
 
-    if (message.text.startsWith("/")) {
-      this.CommandController(message, bot, chat_id, Model);
-    } else {
-      this.TextController(message, bot, Model);
+    // if bot gets message in private chat
+    if (message.chat.type == "private") {
+      await bot.sendMessage(chat_id, "Hey, add me to the group!");
+    } // if message is command
+    else if (message.text.startsWith("/")) {
+      await this.CommandController(message, bot, chat_id, Model, botId);
+    } // if message is text
+    else {
+      await this.TextController(message, bot, Model);
     }
   }
 
@@ -31,10 +37,10 @@ module.exports = class Controllers {
         const answers = await Model.find({ q: message.text });
 
         const length = answers.length;
-        const random = Math.floor(Math.random() * (length - 0) + 0);
+        const random = Math.floor(Math.random() * length);
 
         if (answers.length !== 0) {
-          bot.sendMessage(chat_id, answers[random].a, {
+          await bot.sendMessage(chat_id, answers[random].a, {
             reply_to_message_id: message_id,
           });
         }
@@ -42,26 +48,38 @@ module.exports = class Controllers {
     }
   }
 
-  static async CommandController(message, bot, chat_id, Model) {
+  static async CommandController(message, bot, chat_id, Model, botId) {
     const command = message.text.split("@")[0];
     const fromAdmin = message.from.id == ADMINID;
 
-    if (fromAdmin) {
+    // If start command
+    if (message.text == "/start") {
+      const isAdmin = (await bot.getChatAdministrators(chat_id)).filter(
+        (admin) => admin.user.id == botId
+      );
+
+      if (isAdmin.length !== 0) {
+        bot.sendMessage(chat_id, "Hey, I am listening!");
+      } else {
+        bot.sendMessage(chat_id, "Hey, give me an admin rights!");
+      }
+    } // Other commands if from admind
+    else if (fromAdmin) {
       switch (command) {
         case "/stopbot":
           try {
             const isStopped = await stopList.findOne({ chat_id });
             if (isStopped) {
-              bot.sendMessage(chat_id, "Bot allaqachon to'xtatilgan!");
+              await bot.sendMessage(chat_id, "Bot has already stopped!");
             } else {
               await stopList.create({ chat_id });
-              bot.sendMessage(
+              await bot.sendMessage(
                 chat_id,
-                "Bot bu guruh uchun vaqtincha to'xtatildi!"
+                "Bot has been stopped temporarily!"
               );
             }
           } catch (error) {
-            bot.sendMessage(ADMINID, error);
+            await bot.sendMessage(ADMINID, error);
           }
           return;
         case "/activatebot":
@@ -69,26 +87,26 @@ module.exports = class Controllers {
             const notStopped = await stopList.findOne({ chat_id });
             if (notStopped) {
               await stopList.deleteOne({ chat_id });
-              bot.sendMessage(chat_id, "Bot yana aktiv!");
+              await bot.sendMessage(chat_id, "Bot is active again!");
             } else {
-              bot.sendMessage(chat_id, "Bot aktiv holatda!");
+              await bot.sendMessage(chat_id, "Bot is active!");
             }
           } catch (error) {
-            bot.sendMessage(ADMINID, error);
+            await bot.sendMessage(ADMINID, error);
           }
           return;
         case "/deleteanswer":
           if (message.reply_to_message) {
             try {
               await Model.deleteOne({ a: message.reply_to_message.text });
-              bot.sendMessage(chat_id, "Javob muvaffaqiyatli o'chirildi!");
+              await bot.sendMessage(chat_id, "Answer deleted successfully!");
             } catch (error) {
-              bot.sendMessage(ADMINID, error);
+              await bot.sendMessage(ADMINID, error);
             }
           } else {
-            bot.sendMessage(
+            await bot.sendMessage(
               chat_id,
-              "Javobni o'chirish uchun unga \n /deleteanswer buyrug'ini reply qiling!"
+              "To delete reply /deleteanswer command to an answer!"
             );
           }
           return;
@@ -96,8 +114,9 @@ module.exports = class Controllers {
           console.log(message.text);
           return;
       }
-    } else {
-      bot.sendMessage(chat_id, "Sizning bunga huduqingiz yoq!");
+    } // If not admin user (.env)
+    else {
+      await bot.sendMessage(chat_id, "You have no right to do this!");
     }
   }
 };
